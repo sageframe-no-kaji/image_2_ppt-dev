@@ -47,14 +47,14 @@ SLIDE_SIZES = {
 ALLOWED_EXTS = {".png", ".jpg", ".jpeg"}
 
 
-def prompt_folder() -> Path:
-    """Ask the user for the path to the folder containing images."""
+def prompt_input_path() -> Path:
+    """Ask the user for a path to a PDF file or a folder of images."""
     while True:
-        folder_str = input("Enter the path to the folder containing images (PNG/JPG): ").strip()
-        folder = Path(folder_str).expanduser().resolve()
-        if folder.is_dir():
-            return folder
-        print("✗ That path is not a folder. Please try again.\n")
+        path_str = input("Enter the path to a PDF file or a folder of images: ").strip()
+        path = Path(path_str).expanduser().resolve()
+        if path.exists():
+            return path
+        print("✗ That path does not exist. Please try again.\n")
 
 
 def prompt_output_name(default_name: str = "output") -> Path:
@@ -327,20 +327,20 @@ def main():
     # Interactive fallback if no input flag provided
     if not args.input:
         print("\n=== PPTX from Images ===\n")
-        folder = prompt_folder()
-        images = list_images(folder)
+        in_path = prompt_input_path()
+        images = list_images(in_path)
         if not images:
             print("No PNG/JPG images found in that folder. Exiting.")
             sys.exit(1)
 
         out_name = prompt_output_name(default_name="slides")
-        output_path = (folder / out_name).resolve()
+        output_path = (in_path / out_name).resolve()
 
         width_in, height_in = prompt_slide_size()
         mode = "fit"  # always fit mode by design
 
         print("\nSummary:")
-        print(f"  Source folder: {folder}")
+        print(f"  Source folder: {in_path}")
         print(f"  Images found : {len(images)}")
         print(f"  Slide size   : {width_in:.2f}\" x {height_in:.2f}\"")
         print(f"  Placement    : Fit whole image (no crop)")
