@@ -276,6 +276,20 @@ def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
 
     return out_paths
 
+def pdf_first_page_size_inches(pdf_path: Path) -> Tuple[float, float]:
+    """
+    Return (width_in, height_in) for the first page of a PDF.
+    Uses 72 PDF points per inch via PyMuPDF (fitz).
+    """
+    import fitz  # PyMuPDF
+    with fitz.open(pdf_path) as doc:
+        if doc.page_count == 0:
+            # safe fallback to 16:9 if something is odd
+            return 13.3333, 7.5
+        p0 = doc[0]
+        w_in = p0.rect.width / 72.0
+        h_in = p0.rect.height / 72.0
+        return (w_in, h_in)
 
 def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None:
     """Process all PDFs and/or images in a folder into PPTX files."""
@@ -307,7 +321,8 @@ def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None
             out_path = folder / out_name
             print(f"📄 Converting PDF → PPTX: {item.name} → {out_name}")
             pages = convert_pdf_to_images(item, dpi=dpi)
-            build_presentation(pages, out_path, slide_size_in=(13.3333, 7.5), mode="fit")
+            w_in, h_in = pdf_first_page_size_inches(item)
+            build_presentation(pages, out_path, w_in, h_in, "fit")
         else:
             # Image folder
             imgs = list_images(item if item.is_dir() else folder)
@@ -316,7 +331,16 @@ def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None
             out_name = folder.name + ".pptx"
             out_path = folder / out_name
             print(f"🖼️  Building PPTX from {len(imgs)} images → {out_name}")
-            build_presentation(imgs, out_path, slide_size_in=(13.3333, 7.5), mode="fit")
+
+            # Detect aspect ratio from first image
+            from PIL import Image
+            with Image.open(imgs[0]) as im:
+                w_in, h_in = im.width / 96, im.height / 96  # assume 96 DPI if not embedded
+                # normalize: ensure landscape orientation for convenience
+                if w_in < h_in:
+                    w_in, h_in = h_in, w_in
+
+            build_presentation(imgs, out_path, w_in, h_in, "fit")
 
 # ===[ MAIN ENTRYPOINT ]============================================
 
@@ -394,16 +418,17 @@ def main():
                 out_path = path.parent / out_name
 
                 # 🔒 Overwrite protection
+                w_in, h_in = pdf_first_page_size_inches(path)
                 if confirm_overwrite(out_path, quiet=args.quiet):
                     build_presentation(
                         pages,
                         output_path=out_path,
-                        slide_width_in=13.3333,
-                        slide_height_in=7.5,
+                        slide_width_in=w_in,
+                        slide_height_in=h_in,
                         mode="fit"
                     )
                     if not args.quiet:
-                        print(f"✅ Saved: {out_path}")
+                        print(f"✅ Saved: {out_path} ({w_in:.2f}\" × {h_in:.2f}\")")
                 else:
                     print(f"⏩ Skipped (already exists): {out_path}")
 
