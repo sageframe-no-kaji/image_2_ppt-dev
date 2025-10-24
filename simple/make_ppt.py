@@ -197,6 +197,39 @@ def build_presentation(
     prs.save(str(output_path))
 
 
+# ===[ SECTION: CLI ARGUMENTS ]=====================================
+
+import argparse
+
+def parse_cli_args():
+    """Parse command-line arguments for batch, recursive, or quiet runs."""
+    parser = argparse.ArgumentParser(
+        prog="make_ppt.py",
+        description="Build PowerPoint (.pptx) files from PDFs or image folders."
+    )
+
+    parser.add_argument(
+        "-i", "--input", nargs="+", metavar="PATH",
+        help="Path(s) to one or more PDFs, images, or folders to process."
+    )
+
+    parser.add_argument(
+        "-r", "--recursive", action="store_true",
+        help="Recurse into subfolders when processing folders."
+    )
+
+    parser.add_argument(
+        "--dpi", type=int, default=300,
+        help="DPI for PDF rendering (default: 300)."
+    )
+
+    parser.add_argument(
+        "--quiet", action="store_true",
+        help="Suppress interactive prompts and non-critical output."
+    )
+
+    return parser.parse_args()
+
 def main():
     print("\n=== PPTX from Images ===\n")
 
