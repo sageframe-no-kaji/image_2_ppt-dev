@@ -326,34 +326,49 @@ def main():
 
     # Interactive fallback if no input flag provided
     if not args.input:
-        print("\n=== PPTX from Images ===\n")
+        print("\n=== PPTX Builder (Interactive Mode) ===\n")
         in_path = prompt_input_path()
-        images = list_images(in_path)
-        if not images:
-            print("No PNG/JPG images found in that folder. Exiting.")
+
+        kind = detect_input_type(in_path)
+        if kind == "unknown":
+            print("✗ That path is not a PDF or an image folder. Exiting.")
             sys.exit(1)
 
         out_name = prompt_output_name(default_name="slides")
-        output_path = (in_path / out_name).resolve()
+        output_path = (in_path / out_name).resolve() if in_path.is_dir() else in_path.with_suffix(".pptx")
 
         width_in, height_in = prompt_slide_size()
         mode = "fit"  # always fit mode by design
 
         print("\nSummary:")
-        print(f"  Source folder: {in_path}")
-        print(f"  Images found : {len(images)}")
-        print(f"  Slide size   : {width_in:.2f}\" x {height_in:.2f}\"")
-        print(f"  Placement    : Fit whole image (no crop)")
-        print(f"  Output file  : {output_path}\n")
+        print(f"  Source: {in_path}")
+        print(f"  Type  : {'PDF file' if kind == 'pdf' else 'Image folder'}")
+        print(f"  Slide size: {width_in:.2f}\" x {height_in:.2f}\"")
+        print(f"  Placement : Fit whole image (no crop)")
+        print(f"  Output file: {output_path}\n")
 
         try:
-            build_presentation(
-                images=images,
-                output_path=output_path,
-                slide_width_in=width_in,
-                slide_height_in=height_in,
-                mode=mode
-            )
+            if kind == "pdf":
+                pages = convert_pdf_to_images(in_path, dpi=args.dpi)
+                build_presentation(
+                    images=pages,
+                    output_path=output_path,
+                    slide_width_in=width_in,
+                    slide_height_in=height_in,
+                    mode=mode
+                )
+            else:
+                images = list_images(in_path)
+                if not images:
+                    print("No PNG/JPG images found in that folder. Exiting.")
+                    sys.exit(1)
+                build_presentation(
+                    images=images,
+                    output_path=output_path,
+                    slide_width_in=width_in,
+                    slide_height_in=height_in,
+                    mode=mode
+                )
         except Exception as e:
             print(f"✗ Failed to create presentation: {e}")
             sys.exit(1)
