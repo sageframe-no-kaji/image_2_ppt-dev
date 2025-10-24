@@ -230,6 +230,81 @@ def parse_cli_args():
 
     return parser.parse_args()
 
+# ===[ SECTION: INPUT HANDLING ]====================================
+
+from pdf2image import convert_from_path
+
+
+def detect_input_type(path: Path) -> str:
+    """Return 'pdf', 'folder', or 'unknown' based on the given path."""
+    if path.is_file() and path.suffix.lower() == ".pdf":
+        return "pdf"
+    if path.is_dir():
+        # check if folder contains images
+        imgs = list_images(path)
+        if imgs:
+            return "folder"
+    return "unknown"
+
+
+def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
+    """Convert PDF pages to temporary PNG files at given DPI; return list of paths."""
+    import tempfile
+    from PIL import Image
+
+    temp_dir = Path(tempfile.mkdtemp(prefix="pptx_pdf_"))
+    pages = convert_from_path(pdf_path.as_posix(), dpi=dpi)
+    out_paths = []
+
+    for i, page in enumerate(pages, start=1):
+        out_path = temp_dir / f"page_{i:04d}.png"
+        page.save(out_path, "PNG")
+        out_paths.append(out_path)
+
+    return out_paths
+
+
+def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None:
+    """Process all PDFs and/or images in a folder into PPTX files."""
+    pdfs = sorted(folder.glob("*.pdf"))
+    imgs = [p for p in folder.iterdir() if p.suffix.lower() in ALLOWED_EXTS]
+
+    # Recurse if requested
+    if recursive:
+        for sub in folder.rglob("*"):
+            if sub.is_dir() and sub != folder:
+                process_folder(sub, recursive, dpi, quiet)
+
+    # If both PDFs and images exist — prioritize PDFs, warn user
+    if pdfs and imgs:
+        print(f"⚠️  Mixed content in {folder.name}: prioritizing PDFs.")
+        targets = pdfs
+    elif pdfs:
+        targets = pdfs
+    elif imgs:
+        targets = [folder]
+    else:
+        if not quiet:
+            print(f"(empty) {folder}")
+        return
+
+    for item in targets:
+        if item.suffix.lower() == ".pdf":
+            out_name = item.stem + ".pptx"
+            out_path = folder / out_name
+            print(f"📄 Converting PDF → PPTX: {item.name} → {out_name}")
+            pages = convert_pdf_to_images(item, dpi=dpi)
+            build_presentation(pages, out_path, slide_size_in=(13.3333, 7.5), mode="fit")
+        else:
+            # Image folder
+            imgs = list_images(item if item.is_dir() else folder)
+            if not imgs:
+                continue
+            out_name = folder.name + ".pptx"
+            out_path = folder / out_name
+            print(f"🖼️  Building PPTX from {len(imgs)} images → {out_name}")
+            build_presentation(imgs, out_path, slide_size_in=(13.3333, 7.5), mode="fit")
+
 # ===[ MAIN ENTRYPOINT ]============================================
 
 def main():
@@ -276,19 +351,44 @@ def main():
     # Non-interactive CLI mode
     for path_str in args.input:
         path = Path(path_str).expanduser().resolve()
+
         if not path.exists():
             print(f"✗ Input not found: {path}")
             continue
-        if path.is_dir():
-            print(f"[CLI] Processing folder: {path}")
-            # placeholder — will add actual folder processing in Step 3
-        elif path.is_file():
-            print(f"[CLI] Processing file: {path}")
-            # placeholder — will add PDF/image handling in Step 3
-        else:
-            print(f"✗ Unknown input type: {path}")
 
-    print("✅ CLI execution complete.")
+        kind = detect_input_type(path)
+
+        if kind == "pdf":
+            print(f"📄 [CLI] Converting PDF → PPTX: {path.name}")
+            try:
+                pages = convert_pdf_to_images(path, dpi=args.dpi)
+                out_name = path.stem + ".pptx"
+                out_path = path.parent / out_name
+                build_presentation(
+                    pages,
+                    output_path=out_path,
+                    slide_width_in=13.3333,
+                    slide_height_in=7.5,
+                    mode="fit"
+                )
+                if not args.quiet:
+                    print(f"✅ Saved: {out_path}")
+            except Exception as e:
+                print(f"✗ Failed to process {path}: {e}")
+
+        elif kind == "folder":
+            if not args.quiet:
+                print(f"🗂️  [CLI] Processing folder: {path}")
+            try:
+                process_folder(path, recursive=args.recursive, dpi=args.dpi, quiet=args.quiet)
+            except Exception as e:
+                print(f"✗ Folder failed: {path} ({e})")
+
+        else:
+            print(f"✗ Unsupported input: {path}")
+
+    if not args.quiet:
+        print("\n✅ CLI execution complete.")
 
 
 if __name__ == "__main__":
