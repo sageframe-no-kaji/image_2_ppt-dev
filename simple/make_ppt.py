@@ -230,43 +230,65 @@ def parse_cli_args():
 
     return parser.parse_args()
 
+# ===[ MAIN ENTRYPOINT ]============================================
+
 def main():
-    print("\n=== PPTX from Images ===\n")
+    """Entry point for make_ppt.py — supports CLI or interactive use."""
+    args = parse_cli_args()
 
-    folder = prompt_folder()
-    images = list_images(folder)
-    if not images:
-        print("No PNG/JPG images found in that folder. Exiting.")
-        sys.exit(1)
+    # Interactive fallback if no input flag provided
+    if not args.input:
+        print("\n=== PPTX from Images ===\n")
+        folder = prompt_folder()
+        images = list_images(folder)
+        if not images:
+            print("No PNG/JPG images found in that folder. Exiting.")
+            sys.exit(1)
 
-    # Ask where to save: same folder or custom? We'll default to same folder.
-    out_name = prompt_output_name(default_name="slides")
-    output_path = (folder / out_name).resolve()
+        out_name = prompt_output_name(default_name="slides")
+        output_path = (folder / out_name).resolve()
 
-    width_in, height_in = prompt_slide_size()
-    mode = prompt_fit_mode()  # 'fit' or 'fill'
+        width_in, height_in = prompt_slide_size()
+        mode = "fit"  # always fit mode by design
 
-    print("\nSummary:")
-    print(f"  Source folder: {folder}")
-    print(f"  Images found : {len(images)}")
-    print(f"  Slide size   : {width_in:.2f}\" x {height_in:.2f}\"")
-    print(f"  Placement    : {'Fit whole image (no crop)' if mode=='fit' else 'Crop to fill (cover)'}")
-    print(f"  Output file  : {output_path}\n")
+        print("\nSummary:")
+        print(f"  Source folder: {folder}")
+        print(f"  Images found : {len(images)}")
+        print(f"  Slide size   : {width_in:.2f}\" x {height_in:.2f}\"")
+        print(f"  Placement    : Fit whole image (no crop)")
+        print(f"  Output file  : {output_path}\n")
 
-    # Build presentation
-    try:
-        build_presentation(
-            images=images,
-            output_path=output_path,
-            slide_width_in=width_in,
-            slide_height_in=height_in,
-            mode=mode
-        )
-    except Exception as e:
-        print(f"✗ Failed to create presentation: {e}")
-        sys.exit(1)
+        try:
+            build_presentation(
+                images=images,
+                output_path=output_path,
+                slide_width_in=width_in,
+                slide_height_in=height_in,
+                mode=mode
+            )
+        except Exception as e:
+            print(f"✗ Failed to create presentation: {e}")
+            sys.exit(1)
 
-    print(f"✅ Presentation saved to: {output_path}")
+        print(f"✅ Presentation saved to: {output_path}")
+        return
+
+    # Non-interactive CLI mode
+    for path_str in args.input:
+        path = Path(path_str).expanduser().resolve()
+        if not path.exists():
+            print(f"✗ Input not found: {path}")
+            continue
+        if path.is_dir():
+            print(f"[CLI] Processing folder: {path}")
+            # placeholder — will add actual folder processing in Step 3
+        elif path.is_file():
+            print(f"[CLI] Processing file: {path}")
+            # placeholder — will add PDF/image handling in Step 3
+        else:
+            print(f"✗ Unknown input type: {path}")
+
+    print("✅ CLI execution complete.")
 
 
 if __name__ == "__main__":
