@@ -7,7 +7,19 @@ A single-purpose command-line tool that takes **either** a folder of images **or
 
 ## 📥 Installation
 
-### From GitHub
+### Option 1: Docker (Recommended - Web UI)
+
+```bash
+git clone https://github.com/sageframe-no-kaji/pptx-builder.git
+cd pptx-builder
+docker compose up -d
+```
+
+Then visit **http://localhost:7860** for the web interface.
+
+See [DOCKER.md](DOCKER.md) for full Docker documentation.
+
+### Option 2: Command Line (Python)
 
 ```bash
 git clone https://github.com/sageframe-no-kaji/pptx-builder.git
@@ -15,6 +27,21 @@ cd pptx-builder
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+---
+
+## 🚀 Quick Start
+
+**Web UI (easiest):**
+```bash
+docker compose up -d
+# Visit http://localhost:7860
+```
+
+**Command Line:**
+```bash
+python3 make_ppt.py
 ```
 
 ---

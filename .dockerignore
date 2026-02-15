@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!DOCKER.md
+
+# Development files
+requirements-dev.txt
+.pre-commit-config.yaml
+setup.cfg
+test_make_ppt.py
+
+# Temporary files
+*.pptx
+temp_*
+pptx_pdf_*/
