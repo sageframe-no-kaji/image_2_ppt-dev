@@ -1,13 +1,9 @@
-FROM python:3.11-alpine
+FROM python:3.11-slim
 
-# Install system dependencies for PDF processing and Python packages
-RUN apk add --no-cache \
+# Install system dependencies for PDF processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
-    gcc \
-    musl-dev \
-    jpeg-dev \
-    zlib-dev \
-    libffi-dev
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -24,7 +20,7 @@ COPY make_ppt.py .
 COPY app.py .
 
 # Create non-root user
-RUN adduser -D -u 1000 appuser && \
+RUN useradd -m -u 1000 appuser && \
     mkdir -p /tmp && \
     chown -R appuser:appuser /app /tmp
 
