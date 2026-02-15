@@ -1,10 +1,11 @@
-
 #!/usr/bin/env python3
-# SIMPLE VERSION - IN PRODUCTION
+# -*- coding: utf-8 -*-
 """
 make_ppt.py
 -----------
-Create a PowerPoint (.pptx) from a folder of images (PNG/JPG/JPEG).
+Create a PowerPoint (.pptx) from a folder of images or PDF files.
+
+__version__ = "1.0.0"
 
 Features:
     - Prompts for source folder and output filename.
@@ -21,7 +22,6 @@ Notes:
 """
 
 import sys
-import os
 from pathlib import Path
 from typing import Tuple, List
 
@@ -33,18 +33,21 @@ from pptx.util import Inches, Emu
 # Slide size presets (in inches)
 # -----------------------------
 SLIDE_SIZES = {
-    "1": ("16:9 (13.33\" x 7.5\")", 13.3333333333, 7.5),    # PowerPoint default widescreen
-    "2": ("4:3  (10\" x 7.5\")",     10.0, 7.5),
-    "3": ("Letter  (11\" x 8.5\")",  11.0, 8.5),
+    "1": ("16:9 (13.33\" x 7.5\")", 13.3333333333, 7.5),
+    "2": ("4:3  (10\" x 7.5\")", 10.0, 7.5),
+    "3": ("Letter  (11\" x 8.5\")", 11.0, 8.5),
     "4": ("A4      (11.69\" x 8.27\")", 11.69, 8.27),
-    "5": ("Legal   (14\" x 8.5\")",  14.0, 8.5),
-    "6": ("Tabloid (17\" x 11\")",   17.0, 11.0),
+    "5": ("Legal   (14\" x 8.5\")", 14.0, 8.5),
+    "6": ("Tabloid (17\" x 11\")", 17.0, 11.0),
 }
 
 # -----------------------------
 # File extensions we will accept
 # -----------------------------
-ALLOWED_EXTS = {".png", ".jpg", ".jpeg"}
+ALLOWED_EXTS = {
+    ".png", ".jpg", ".jpeg", ".tif", ".tiff",
+    ".webp", ".bmp", ".gif", ".ico", ".heic", ".heif"
+}
 
 
 def prompt_input_path() -> Path:
@@ -57,7 +60,7 @@ def prompt_input_path() -> Path:
         print("✗ That path does not exist. Please try again.\n")
 
 
-def prompt_output_name(default_name: str = "output") -> Path:
+def prompt_output_name(default_name: str = "output") -> str:
     """Ask the user for the output file name (no extension needed)."""
     out = input(f"Enter output filename (without extension) [{default_name}]: ").strip()
     if not out:
@@ -65,7 +68,7 @@ def prompt_output_name(default_name: str = "output") -> Path:
     # Ensure .pptx extension
     if not out.lower().endswith(".pptx"):
         out = out + ".pptx"
-    return Path(out).name  # return just the name (no path), we'll place it next to the script or in the folder later
+    return out
 
 
 def prompt_slide_size() -> Tuple[float, float]:
@@ -170,13 +173,19 @@ def place_picture_fill(slide, img_path: Path, slide_w_emu: int, slide_h_emu: int
     pic.width = int(new_w)
     pic.height = int(new_h)
 
-def confirm_overwrite(path: Path, quiet: bool = False, force: bool = False) -> bool:
+
+def confirm_overwrite(
+    path: Path, quiet: bool = False, force: bool = False
+) -> bool:
     if not path.exists():
         return True
     if quiet or force:
         return True
-    reply = input(f"⚠️  File exists: {path.name}. Overwrite? [y/N]: ").strip().lower()
+    reply = input(
+        f"⚠️  File exists: {path.name}. Overwrite? [y/N]: "
+    ).strip().lower()
     return reply == "y"
+
 
 def build_presentation(
     images: List[Path],
@@ -190,9 +199,9 @@ def build_presentation(
     prs.slide_width = Inches(slide_width_in)
     prs.slide_height = Inches(slide_height_in)
 
-    # Cache slide size in EMU for math
-    sw_emu = int(prs.slide_width)
-    sh_emu = int(prs.slide_height)
+    # Cache slide size in EMU for math (we just set these, so they're not None)
+    sw_emu = int(prs.slide_width)  # type: ignore[arg-type]
+    sh_emu = int(prs.slide_height)  # type: ignore[arg-type]
 
     for img in images:
         slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
@@ -206,7 +215,8 @@ def build_presentation(
 
 # ===[ SECTION: CLI ARGUMENTS ]=====================================
 
-import argparse
+import argparse  # noqa: E402
+
 
 def parse_cli_args():
     """Parse command-line arguments for batch, recursive, or quiet runs."""
@@ -243,9 +253,10 @@ def parse_cli_args():
 
     return parser.parse_args()
 
+
 # ===[ SECTION: INPUT HANDLING ]====================================
 
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path  # noqa: E402
 
 
 def detect_input_type(path: Path) -> str:
@@ -261,20 +272,27 @@ def detect_input_type(path: Path) -> str:
 
 
 def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
-    """Convert PDF pages to temporary PNG files at given DPI; return list of paths."""
-    import tempfile
-    from PIL import Image
+    """Convert PDF pages to temporary PNG files."""
+    import tempfile  # noqa: E402
 
     temp_dir = Path(tempfile.mkdtemp(prefix="pptx_pdf_"))
-    pages = convert_from_path(pdf_path.as_posix(), dpi=dpi)
-    out_paths = []
+    try:
+        pages = convert_from_path(pdf_path.as_posix(), dpi=dpi)
+        out_paths = []
 
-    for i, page in enumerate(pages, start=1):
-        out_path = temp_dir / f"page_{i:04d}.png"
-        page.save(out_path, "PNG")
-        out_paths.append(out_path)
+        for i, page in enumerate(pages, start=1):
+            out_path = temp_dir / f"page_{i:04d}.png"
+            page.save(out_path, "PNG")
+            out_paths.append(out_path)
 
-    return out_paths
+        return out_paths
+    except Exception as e:
+        # Clean up temp directory on failure
+        import shutil
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+        raise RuntimeError(f"Failed to convert PDF: {e}")
+
 
 def pdf_first_page_size_inches(pdf_path: Path) -> Tuple[float, float]:
     """
@@ -291,7 +309,10 @@ def pdf_first_page_size_inches(pdf_path: Path) -> Tuple[float, float]:
         h_in = p0.rect.height / 72.0
         return (w_in, h_in)
 
-def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None:
+
+def process_folder(
+    folder: Path, recursive: bool, dpi: int, quiet: bool
+) -> None:
     """Process all PDFs and/or images in a folder into PPTX files."""
     pdfs = sorted(folder.glob("*.pdf"))
     imgs = [p for p in folder.iterdir() if p.suffix.lower() in ALLOWED_EXTS]
@@ -342,6 +363,7 @@ def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None
 
             build_presentation(imgs, out_path, w_in, h_in, "fit")
 
+
 # ===[ MAIN ENTRYPOINT ]============================================
 
 def main():
@@ -359,21 +381,33 @@ def main():
             sys.exit(1)
 
         out_name = prompt_output_name(default_name="slides")
-        output_path = (in_path / out_name).resolve() if in_path.is_dir() else in_path.with_suffix(".pptx")
+        if in_path.is_dir():
+            output_path = (in_path / out_name).resolve()
+        else:
+            output_path = in_path.with_suffix(".pptx")
 
         width_in, height_in = prompt_slide_size()
-        mode = "fit"  # always fit mode by design
+        mode = prompt_fit_mode()  # Let user choose fit or fill
 
         print("\nSummary:")
         print(f"  Source: {in_path}")
-        print(f"  Type  : {'PDF file' if kind == 'pdf' else 'Image folder'}")
+        file_type = 'PDF file' if kind == 'pdf' else 'Image folder'
+        print(f"  Type  : {file_type}")
         print(f"  Slide size: {width_in:.2f}\" x {height_in:.2f}\"")
-        print(f"  Placement : Fit whole image (no crop)")
+        placement = (
+            'Fit whole image (no crop)' if mode == 'fit'
+            else 'Crop to fill (no whitespace)'
+        )
+        print(f"  Placement : {placement}")
         print(f"  Output file: {output_path}\n")
 
+        temp_dir = None
         try:
             if kind == "pdf":
                 pages = convert_pdf_to_images(in_path, dpi=args.dpi)
+                # Store temp dir for cleanup
+                if pages:
+                    temp_dir = pages[0].parent
                 build_presentation(
                     images=pages,
                     output_path=output_path,
@@ -384,7 +418,7 @@ def main():
             else:
                 images = list_images(in_path)
                 if not images:
-                    print("No PNG/JPG images found in that folder. Exiting.")
+                    print("No images found in that folder. Exiting.")
                     sys.exit(1)
                 build_presentation(
                     images=images,
@@ -396,6 +430,14 @@ def main():
         except Exception as e:
             print(f"✗ Failed to create presentation: {e}")
             sys.exit(1)
+        finally:
+            # Clean up temporary PDF conversion files
+            if temp_dir and temp_dir.exists():
+                import shutil
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception:
+                    pass  # Best effort cleanup
 
         print(f"✅ Presentation saved to: {output_path}")
         return
@@ -412,14 +454,19 @@ def main():
 
         if kind == "pdf":
             print(f"📄 [CLI] Converting PDF → PPTX: {path.name}")
+            temp_dir = None
             try:
                 pages = convert_pdf_to_images(path, dpi=args.dpi)
+                if pages:
+                    temp_dir = pages[0].parent
                 out_name = path.stem + ".pptx"
                 out_path = path.parent / out_name
 
                 # 🔒 Overwrite protection
                 w_in, h_in = pdf_first_page_size_inches(path)
-                if confirm_overwrite(out_path, quiet=args.quiet):
+                if confirm_overwrite(
+                    out_path, quiet=args.quiet, force=args.force
+                ):
                     build_presentation(
                         pages,
                         output_path=out_path,
@@ -434,6 +481,14 @@ def main():
 
             except Exception as e:
                 print(f"✗ Failed to process {path}: {e}")
+            finally:
+                # Clean up temp files
+                if temp_dir and temp_dir.exists():
+                    import shutil
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except Exception:
+                        pass
 
         elif kind == "folder":
             if not args.quiet:
@@ -448,6 +503,7 @@ def main():
 
     if not args.quiet:
         print("\n✅ CLI execution complete.")
+
 
 if __name__ == "__main__":
     main()
