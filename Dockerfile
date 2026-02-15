@@ -1,9 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
-# Install system dependencies for PDF processing
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for PDF processing and Python packages
+RUN apk add --no-cache \
     poppler-utils \
-    && rm -rf /var/lib/apt/lists/*
+    gcc \
+    musl-dev \
+    jpeg-dev \
+    zlib-dev \
+    libffi-dev
 
 # Set working directory
 WORKDIR /app
@@ -19,15 +23,16 @@ RUN pip install --no-cache-dir gradio>=4.0.0
 COPY make_ppt.py .
 COPY app.py .
 
-# Create temp directory with proper permissions
-RUN mkdir -p /tmp/pptx_builder && chmod 777 /tmp/pptx_builder
+# Create non-root user
+RUN adduser -D -u 1000 appuser && \
+    mkdir -p /tmp && \
+    chown -R appuser:appuser /app /tmp
+
+# Switch to non-root user
+USER appuser
 
 # Expose Gradio port
 EXPOSE 7860
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:7860')"
 
 # Run the Gradio app
 CMD ["python", "app.py"]

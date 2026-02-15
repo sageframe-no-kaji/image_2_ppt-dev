@@ -7,6 +7,7 @@ Simple interface for converting PDFs and images to PowerPoint
 import gradio as gr
 import tempfile
 import shutil
+import atexit
 from pathlib import Path
 from typing import Optional, List
 import time
@@ -28,6 +29,37 @@ SLIDE_SIZE_OPTIONS = {
     "Legal (14\" x 8.5\")": (14.0, 8.5),
     "Tabloid (17\" x 11\")": (17.0, 11.0),
 }
+
+# Security limits
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB per file
+MAX_FILES = 100  # Max 100 files per upload
+
+# Track temp directories for cleanup
+TEMP_DIRS = []
+
+
+def cleanup_temp_files():
+    """Clean up all temporary directories on exit."""
+    for temp_dir in TEMP_DIRS:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+    TEMP_DIRS.clear()
+
+
+def cleanup_old_files():
+    """Remove temp directories older than 1 hour."""
+    temp_base = Path("/tmp")
+    current_time = time.time()
+
+    for item in temp_base.glob("pptx_builder_*"):
+        if item.is_dir():
+            # Remove if older than 1 hour
+            if current_time - item.stat().st_mtime > 3600:
+                shutil.rmtree(item, ignore_errors=True)
+
+
+# Register cleanup on exit
+atexit.register(cleanup_temp_files)
 
 
 def process_files(
@@ -51,8 +83,19 @@ def process_files(
     if not files:
         return None
 
+    # Security: Limit number of files
+    if len(files) > MAX_FILES:
+        raise gr.Error(f"Too many files. Maximum {MAX_FILES} files allowed.")
+
+    # Security: Check file sizes
+    for file in files:
+        file_path = Path(file.name)
+        if file_path.exists() and file_path.stat().st_size > MAX_FILE_SIZE:
+            raise gr.Error(f"File too large: {file_path.name}. Maximum 50MB per file.")
+
     # Create temp directory for processing
-    temp_dir = Path(tempfile.mkdtemp(prefix="pptx_builder_"))
+    temp_dir = Path(tempfile.mkdtemp(prefix="pptx_builder_", dir="/tmp"))
+    TEMP_DIRS.append(temp_dir)
 
     try:
         # Get slide dimensions
@@ -95,9 +138,6 @@ def process_files(
 
     except Exception as e:
         print(f"Error processing files: {e}")
-        # Cleanup on error
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir, ignore_errors=True)
         return None
 
 
@@ -157,7 +197,7 @@ with gr.Blocks(title="PPTX Builder") as app:
                 3. Click "Create Presentation"
                 4. Download your PPTX file
 
-                **Note:** Files are automatically deleted after 30 days.
+                **Note:** Temp files are cleaned up automatically after 1 hour.
                 """
             )
 
@@ -169,6 +209,9 @@ with gr.Blocks(title="PPTX Builder") as app:
     )
 
 if __name__ == "__main__":
+    # Clean up old files on startup
+    cleanup_old_files()
+
     app.launch(
         server_name="0.0.0.0",
         server_port=7860,

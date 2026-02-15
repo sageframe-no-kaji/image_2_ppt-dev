@@ -8,33 +8,15 @@ services:
       - "7860:7860"
     environment:
       - GRADIO_SERVER_NAME=0.0.0.0
-      - GRADIO_SERVER_PORT=7860
     restart: unless-stopped
     tmpfs:
-      - /tmp:size=2G,mode=1777
+      - /tmp:size=2G
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 512M
     labels:
       - "com.pptx-builder.description=PPTX Builder Web UI"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # Optional: Cleanup service to purge old temp files
-  cleanup:
-    image: alpine:latest
-    container_name: pptx-builder-cleanup
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    entrypoint: /bin/sh
-    command: >
-      -c "while true; do
-        echo 'Running cleanup...';
-        find /tmp -name 'pptx_builder_*' -type d -mtime +30 -exec rm -rf {} + 2>/dev/null || true;
-        find /tmp -name 'pptx_pdf_*' -type d -mtime +30 -exec rm -rf {} + 2>/dev/null || true;
-        sleep 86400;
-      done"
-    restart: unless-stopped
-    tmpfs:
-      - /tmp:size=100M,mode=1777
