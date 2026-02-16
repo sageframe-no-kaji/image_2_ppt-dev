@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pptx-builder"
+name = "sageframe-pptx-builder"
 version = "0.1.0"
 description = "A local-first CLI (and optional Web UI) for converting PDFs and image folders into clean, DPI-controlled PowerPoint slides"
 readme = "README.md"
