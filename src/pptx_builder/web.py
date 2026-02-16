@@ -293,7 +293,7 @@ with gr.Blocks(title="PPTX Builder") as app:
             </div>
         </div>
         """)
-        
+
         gr.Markdown("""
             **Supported formats:** PDF, PNG, JPG, JPEG, TIFF, WebP, BMP, GIF, ICO, HEIC, HEIF
             """)
