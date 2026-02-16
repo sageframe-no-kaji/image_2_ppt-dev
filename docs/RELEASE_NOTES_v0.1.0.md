@@ -7,7 +7,7 @@
 ### CLI (Primary Interface)
 
 ```bash
-pip install pptx-builder
+pip install sageframe-pptx-builder
 ```
 
 **System dependencies:**
@@ -18,7 +18,7 @@ pip install pptx-builder
 ### Web UI (Optional)
 
 ```bash
-pip install "pptx-builder[web]"
+pip install "sageframe-pptx-builder[web]"
 python -m pptx_builder.web
 ```
 
@@ -120,9 +120,9 @@ Upload files, select options, download presentation.
 ### Packaging & Distribution
 
 - ✅ Modern Python packaging (PEP 621) with `pyproject.toml`
-- ✅ Published to PyPI as `pptx-builder`
+- ✅ Published to PyPI as `sageframe-pptx-builder`
 - ✅ CLI entrypoint: `pptx-builder` command
-- ✅ Optional web UI extras: `pip install "pptx-builder[web]"`
+- ✅ Optional web UI extras: `pip install "sageframe-pptx-builder[web]"`
 - ✅ Src layout (`src/pptx_builder/`) for clean packaging
 
 ### Code Quality
@@ -156,7 +156,7 @@ python make_ppt.py -i document.pdf
 
 **New:**
 ```bash
-pip install pptx-builder
+pip install sageframe-pptx-builder
 pptx-builder -i document.pdf
 ```
 
@@ -168,7 +168,7 @@ from pptx_builder import build_presentation, convert_pdf_to_images
 
 ## Links
 
-- **PyPI**: https://pypi.org/project/pptx-builder/
+- **PyPI**: https://pypi.org/project/sageframe-pptx-builder/
 - **GitHub**: https://github.com/sageframe-no-kaji/pptx-builder
 - **Issues**: https://github.com/sageframe-no-kaji/pptx-builder/issues
 - **Documentation**: See [README.md](../README.md) and [DOCKER.md](../DOCKER.md)
