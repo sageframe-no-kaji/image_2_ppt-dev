@@ -15,6 +15,7 @@ import time
 from make_ppt import (
     build_presentation,
     convert_pdf_to_images,
+    pdf_first_page_size_inches,
 )
 
 # Slide size options for dropdown
@@ -103,6 +104,14 @@ def process_files(
     try:
         # Get slide dimensions
         width_in, height_in = SLIDE_SIZE_OPTIONS[slide_size]
+
+        # Auto-detect aspect ratio for single PDF
+        if len(files) == 1 and Path(files[0]).suffix.lower() == ".pdf":
+            width_in, height_in = pdf_first_page_size_inches(Path(files[0]))
+            print(
+                f"[DEBUG] Auto-detected PDF aspect ratio: {width_in:.2f}x{height_in:.2f}"
+            )
+
         mode = "fit" if fit_mode == "Fit whole image" else "fill"
         print(f"[DEBUG] Slide size: {width_in}x{height_in}, mode: {mode}")
 
