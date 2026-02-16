@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/pypi/v/sageframe-pptx-builder.svg)](https://pypi.org/project/sageframe-pptx-builder/)
 [![Tests](https://github.com/sageframe-no-kaji/pptx-builder/actions/workflows/test.yml/badge.svg)](https://github.com/sageframe-no-kaji/pptx-builder/actions/workflows/test.yml)
 
 A local-first CLI (and optional Web UI) for converting PDFs and image folders into clean, DPI-controlled PowerPoint slides — no PowerPoint required.
@@ -11,7 +12,7 @@ A local-first CLI (and optional Web UI) for converting PDFs and image folders in
 ## Quick Start
 
 ```bash
-pip install pptx-builder
+pip install sageframe-pptx-builder
 pptx-builder -i document.pdf
 ```
 
@@ -32,7 +33,7 @@ This tool deliberately favors consistent, high-quality raster output over attemp
 ### Via pip (Recommended)
 
 ```bash
-pip install pptx-builder
+pip install sageframe-pptx-builder
 ```
 
 **System dependencies:**
@@ -47,7 +48,7 @@ pip install pptx-builder
 ### With Web UI (Optional)
 
 ```bash
-pip install "pptx-builder[web]"
+pip install "sageframe-pptx-builder[web]"
 ```
 
 Run the web interface:
