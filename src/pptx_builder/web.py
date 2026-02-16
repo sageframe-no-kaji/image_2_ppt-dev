@@ -284,11 +284,23 @@ input:focus, textarea:focus, select:focus {
 # Create Gradio interface
 with gr.Blocks(title="PPTX Builder") as app:
     with gr.Column(elem_id="main-content"):
+        # Red gradient header
+        gr.HTML("""
+        <div class="logo-container">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="3"/>
+                <path d="M 30 35 L 50 20 L 70 35 L 70 65 L 50 80 L 30 65 Z" fill="none" stroke="white" stroke-width="3" stroke-linejoin="miter"/>
+                <line x1="30" y1="35" x2="70" y2="65" stroke="white" stroke-width="3"/>
+                <line x1="70" y1="35" x2="30" y2="65" stroke="white" stroke-width="3"/>
+                <line x1="50" y1="20" x2="50" y2="80" stroke="white" stroke-width="3"/>
+            </svg>
+            <h1>PPTX Builder</h1>
+        </div>
+        """)
+        
         gr.Markdown("""
-            # PPTX Builder
-
             *Convert PDFs and images to PowerPoint presentations*
-
+            
             **Supported formats:** PDF, PNG, JPG, JPEG, TIFF, WebP, BMP, GIF, ICO, HEIC, HEIF
             """)
 
