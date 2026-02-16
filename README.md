@@ -1,13 +1,13 @@
-# PPTX Builder — Images & PDFs → PowerPoint (300 DPI)
+# PPTX Builder
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-A single-purpose command-line tool that takes **either** a folder of images **or** a PDF file, then builds a `.pptx` with one slide per page/image at 300 DPI. No PowerPoint app is needed to create presentations — only to open the result.
+Convert PDFs and images to PowerPoint presentations. Each page or image becomes a slide at configurable DPI.
 
-## 📥 Installation
+## Installation
 
-### Option 1: Docker (Recommended - Web UI)
+### Docker (Web UI)
 
 ```bash
 git clone https://github.com/sageframe-no-kaji/pptx-builder.git
@@ -15,261 +15,144 @@ cd pptx-builder
 docker compose up -d
 ```
 
-Then visit **http://localhost:7860** for the web interface.
+Access web interface at http://localhost:7860
 
-See [DOCKER.md](DOCKER.md) for full Docker documentation.
+See [DOCKER.md](DOCKER.md) for details.
 
-### Option 2: Command Line (Python)
+### Python CLI
 
 ```bash
 git clone https://github.com/sageframe-no-kaji/pptx-builder.git
 cd pptx-builder
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
+**System dependencies:**
+- Python 3.8+
+- `poppler-utils` (for PDF conversion)
+  - Debian/Ubuntu: `apt install poppler-utils`
+  - macOS: `brew install poppler`
 
-## 🚀 Quick Start
+## Usage
 
-**Web UI (easiest):**
+### Web UI
+
 ```bash
 docker compose up -d
-# Visit http://localhost:7860
+# Open http://localhost:7860
 ```
 
-**Command Line:**
+Upload files, select options, download presentation.
+
+### Command Line
+
+**Interactive mode:**
 ```bash
-python3 make_ppt.py
+python make_ppt.py
 ```
 
----
-
-## ✅ Features
-
-### 🔹 Input Options
-- **PDF file**
-  → Automatically converted to PNGs at **300 DPI** (via PyMuPDF)
-- **Folder of images**
-  → Non-image files are ignored
-
-### 🔹 Supported Image Formats
-.png · .jpg · .jpeg · .tif · .tiff
-.webp · .bmp · .gif · .ico · .heic · .heif
-(Animated GIFs use only the first frame.)
-
-### 🔹 Slide Size Presets
-You can choose at runtime:
-1. 16:9 (13.33" × 7.5")
-2. 4:3 (10" × 7.5")
-3. Letter (11" × 8.5")
-4. A4 (11.69" × 8.27")
-5. Legal (14" × 8.5")
-6. Tabloid (17" × 11")
-
-### 🔹 Image Placement Modes
-Choose one per run:
-1. **Fit whole image**
-   - No cropping
-   - No stretching
-   - Letterboxing/pillarboxing if needed
-2. **Crop to fill**
-   - Full coverage
-   - Proportional scaling
-   - Edges may be trimmed
-
-### 🔹 Output
-- One slide per image or PDF page
-- Images are centered and never stretched
-- Sorted alphabetically (case-insensitive)
-- Exports `.pptx` to your chosen location
-- Temporary PNGs from PDF conversion are auto-deleted
-
----
-
-## ✅ Requirements
-
-**Python 3.8 or higher**
-
-Create and activate a virtual environment (recommended), then install dependencies:
-
+**CLI examples:**
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+# Convert PDF
+python make_ppt.py -i document.pdf
 
-**Dependencies:**
-- `python-pptx` — PowerPoint file creation
-- `Pillow` — Image processing
-- `PyMuPDF` — PDF rendering
-- `pdf2image` — PDF to image conversion
-- `pillow-heif` — HEIC/HEIF support
+# Custom output name
+python make_ppt.py -i document.pdf -o slides.pptx
 
----
+# Higher DPI (slower, sharper)
+python make_ppt.py -i document.pdf --dpi 600
 
-## ✅ Usage
-### Interactive Mode
+# Process folder of images
+python make_ppt.py -i photos/
 
-Run the script without arguments for interactive prompts:
+# Batch process
+python make_ppt.py -i file1.pdf file2.pdf --quiet --force
 
-```bash
-```
-python3 make_ppt.py
-```
-
-You’ll be prompted for:
-1. Path to a PDF or a folder with images
-2. Output filename
-3. Slide size
-4. Placement mode (fit or fill)
-
-When finished, you’ll see something like:
-
-```
-### CLI Mode
-
-For batch processing or automation:
-
-```bash
-**Interactive:**
-```bash
-python3 make_ppt.py
-Enter a path to a PDF file or a folder of images: /Users/me/Desktop/images
-Enter output filename (without extension) [slides]: MyDeck
-Choose slide size:
-  1) 16:9 (13.33" x 7.5")
-  2) 4:3  (10" x 7.5")
-  3) Letter  (11" x 8.5")
-  4) A4      (11.69" x 8.27")
-  5) Legal   (14" x 8.5")
-  6) Tabloid (17" x 11")
 # Process folder recursively
-python3 make_ppt.py -i images/ --recursive
-
-# High DPI conversion
-python3 make_ppt.py -i document.pdf --dpi 600
- (configurable via `--dpi`)
-- HEIC/HEIF support provided by `pillow-heif`
-- Non-image files in folders are silently ignored
-- No stretching — images are always scaled proportionally
-- Temporary PDF conversions are cleaned up automatically
-- `Ctrl+C` exits cleanly
-
----
-
-## 📦 Packaging (Optional)
-
-Create a standalone binary (Mac/Linux/Windows) with PyInstaller:
-
-```bash
-pip install pyinstaller
-pyinstaller --onefile make_ppt.py
+python make_ppt.py -i images/ --recursive
 ```
 
-Output will appear in the `dist/` folder.
+**Common options:**
+- `-i, --input PATH` - Input file(s) or folder
+- `-o, --output NAME` - Output filename (single input only)
+- `--dpi DPI` - PDF rendering quality (default: 300)
+- `-r, --recursive` - Process subfolders
+- `--quiet` - No prompts
+- `--force` - Overwrite existing files
+- `-h, --help` - Show all options
 
----
+## Features
 
-## � Development
+**Supported formats:**
+- PDF (multi-page supported)
+- Images: PNG, JPG, JPEG, TIFF, WebP, BMP, GIF, ICO, HEIC, HEIF
 
-### Running Tests
+**Slide sizes:**
+- 16:9 Widescreen (13.33" × 7.5") - default
+- 4:3 Standard (10" × 7.5")
+- Letter (11" × 8.5")
+- A4 (11.69" × 8.27")
+- Legal (14" × 8.5")
+- Tabloid (17" × 11")
 
+**Image placement:**
+- **Fit** - No cropping, entire image visible (default)
+- **Fill** - No whitespace, may crop edges
+
+**Output:**
+- One slide per image/page
+- Images sorted alphabetically
+- Centered, never stretched
+- Compatible with PowerPoint, LibreOffice, Google Slides
+
+## Documentation
+
+**Man page:**
 ```bash
-# Install development dependencies
+man docs/make_ppt.1
+```
+
+**Additional documentation:**
+- [DOCKER.md](DOCKER.md) - Docker deployment
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
+- [docs/GRADIO_TUTORIAL.md](docs/GRADIO_TUTORIAL.md) - Web UI technical guide
+- [docs/MAN_PAGE_USAGE.md](docs/MAN_PAGE_USAGE.md) - Man page instructions
+
+## Development
+
+**Run tests:**
+```bash
 pip install -r requirements-dev.txt
-
-# Run all tests
 pytest
-
-# Run with coverage
 pytest --cov=make_ppt --cov-report=html
-
-# Run only unit tests (skip integration)
-pytest -m "not integration"
 ```
 
-### Code Quality
-
+**Code quality:**
 ```bash
-# Format code with Black
-black make_ppt.py test_make_ppt.py
+black make_ppt.py test_make_ppt.py  # Format
+flake8 make_ppt.py                   # Lint
+mypy make_ppt.py                     # Type check
+```
 
-# Lint with flake8
-flake8 make_ppt.py
-
-# Type check with mypy
-mypy make_ppt.py
-
-# Or use pre-commit hooks (auto-formats on commit)
+**Pre-commit hooks:**
+```bash
 pre-commit install
 pre-commit run --all-files
 ```
 
----
+## Notes
 
-## �🤝 Contributing
+- PDF rendering: 150-300 DPI recommended (600 DPI is slow)
+- Large PDFs (30+ pages) at 300 DPI may take 30-60 seconds
+- Temporary files cleaned up automatically
+- HEIC/HEIF require `pillow-heif` package (included)
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+## License
 
-- **Issues:** https://github.com/sageframe-no-kaji/pptx-builder/issues
-- **Pull Requests:** https://github.com/sageframe-no-kaji/pptx-builder/pulls
+MIT License - see [LICENSE](LICENSE) file.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+## Contributing
 
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 💡 Why This Tool?
-
-There is **no existing free or open-source tool** that:
-- Converts PDF → editable PPTX (page-per-slide, high DPI)
-- Handles folders of mixed-format images (including HEIC, TIFF, WebP)
-- Lets users pick slide size & scaling mode
-- Works offline without requiring PowerPoint or Acrobat
-- Supports both interactive and CLI batch modes
-```
-python3 make_ppt.py
-Enter a path to a PDF file or a folder of images: /Users/me/Desktop/images
-Enter output filename (without extension) [slides]: MyDeck
-Choose slide size:
-  1) 16:9 ...
-Enter number (1-6): 1
-How should images be placed?
-  1) Fit whole image ...
-  2) Crop to fill ...
-Enter 1 or 2: 1
-✅ Presentation saved to: /Users/me/Desktop/images/MyDeck.pptx
-```
-
----
-
-## ✅ Notes
-- PDFs are rasterized at 300 DPI using PyMuPDF
-- HEIC/HEIF support provided by `pillow-heif`
-- Non-image files in folders are silently ignored
-- No stretching — images are always scaled proportionally
-- Temporary PDF conversions are cleaned up automatically
-- `Ctrl+C` exits cleanly
-
----
-
-## ✅ Packaging (Optional)
-Create a standalone binary (Mac/Linux/Windows) with:
-
-```
-pyinstaller --onefile make_ppt.py
-```
-
-Output will appear in the `dist/` folder.
-
----
-
-## ✅ Summary
-Use this script when you want fast, clean conversion of images or PDFs into PPTX slides — with correct sizing, scaling, and zero manual setup. Just run it, follow prompts, and you're done.
+Issues and pull requests welcome at https://github.com/sageframe-no-kaji/pptx-builder

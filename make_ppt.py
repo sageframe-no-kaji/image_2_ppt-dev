@@ -251,6 +251,12 @@ def parse_cli_args():
         help="Overwrite existing PPTX files without confirmation",
     )
 
+    parser.add_argument(
+        "-o", "--output",
+        metavar="NAME",
+        help="Output filename (with or without .pptx extension). Only valid for single input.",
+    )
+
     return parser.parse_args()
 
 
@@ -275,20 +281,33 @@ def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
     """Convert PDF pages to temporary PNG files."""
     import tempfile  # noqa: E402
 
+    print(f"[DEBUG make_ppt] Starting PDF conversion: {pdf_path}")
+    print(f"[DEBUG make_ppt] PDF exists: {pdf_path.exists()}")
+    print(f"[DEBUG make_ppt] PDF size: {pdf_path.stat().st_size if pdf_path.exists() else 'N/A'}")
+
     temp_dir = Path(tempfile.mkdtemp(prefix="pptx_pdf_"))
+    print(f"[DEBUG make_ppt] Created temp dir: {temp_dir}")
+
     try:
+        print(f"[DEBUG make_ppt] Calling convert_from_path with dpi={dpi}")
         pages = convert_from_path(pdf_path.as_posix(), dpi=dpi)
+        print(f"[DEBUG make_ppt] Got {len(pages)} pages from PDF")
         out_paths = []
 
         for i, page in enumerate(pages, start=1):
             out_path = temp_dir / f"page_{i:04d}.png"
             page.save(out_path, "PNG")
             out_paths.append(out_path)
+            print(f"[DEBUG make_ppt] Saved page {i} to {out_path}")
 
+        print(f"[DEBUG make_ppt] Successfully converted {len(out_paths)} pages")
         return out_paths
     except Exception as e:
         # Clean up temp directory on failure
         import shutil
+        import traceback
+        print(f"[ERROR make_ppt] PDF conversion failed: {e}")
+        print(f"[ERROR make_ppt] Traceback:\n{traceback.format_exc()}")
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
         raise RuntimeError(f"Failed to convert PDF: {e}")
@@ -370,6 +389,11 @@ def main():
     """Entry point for make_ppt.py — supports CLI or interactive use."""
     args = parse_cli_args()
 
+    # Validate --output usage
+    if args.output and args.input and len(args.input) > 1:
+        print("✗ Error: --output can only be used with a single input file.")
+        return
+
     # Interactive fallback if no input flag provided
     if not args.input:
         print("\n=== PPTX Builder (Interactive Mode) ===\n")
@@ -384,7 +408,14 @@ def main():
         if in_path.is_dir():
             output_path = (in_path / out_name).resolve()
         else:
-            output_path = in_path.with_suffix(".pptx")
+            # Use --output if provided, otherwise use input name
+            if args.output:
+                out_name = args.output
+                if not out_name.lower().endswith(".pptx"):
+                    out_name = out_name + ".pptx"
+                output_path = in_path.parent / out_name
+            else:
+                output_path = in_path.with_suffix(".pptx")
 
         width_in, height_in = prompt_slide_size()
         mode = prompt_fit_mode()  # Let user choose fit or fill
@@ -459,7 +490,15 @@ def main():
                 pages = convert_pdf_to_images(path, dpi=args.dpi)
                 if pages:
                     temp_dir = pages[0].parent
-                out_name = path.stem + ".pptx"
+
+                # Determine output name
+                if args.output:
+                    out_name = args.output
+                    if not out_name.lower().endswith(".pptx"):
+                        out_name = out_name + ".pptx"
+                else:
+                    out_name = path.stem + ".pptx"
+
                 out_path = path.parent / out_name
 
                 # 🔒 Overwrite protection

@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir gradio>=4.0.0
 # Copy application files
 COPY make_ppt.py .
 COPY app.py .
+COPY sageframe-github.svg .
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
@@ -27,8 +28,11 @@ RUN useradd -m -u 1000 appuser && \
 # Switch to non-root user
 USER appuser
 
+# Set Python unbuffered mode for logging
+ENV PYTHONUNBUFFERED=1
+
 # Expose Gradio port
 EXPOSE 7860
 
 # Run the Gradio app
-CMD ["python", "app.py"]
+CMD ["python", "-u", "app.py"]
