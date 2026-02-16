@@ -209,14 +209,14 @@ custom_css = """
 .footer {
     text-align: center;
     padding: 20px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, #ed1e24 0%, #c41a1f 100%);
     border-radius: 10px;
     margin-top: 20px;
-    color: #1a1a1a;
-    border: 1px solid #dee2e6;
+    color: white;
+    border: 1px solid #c41a1f;
 }
 .footer a {
-    color: #ed1e24;
+    color: white;
     text-decoration: none;
     font-weight: 500;
     transition: all 0.2s ease;

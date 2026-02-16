@@ -8,12 +8,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy only pyproject.toml first for dependency caching
 COPY pyproject.toml .
+
+# Create minimal package structure for dependency installation
+RUN mkdir -p src/pptx_builder && \
+    touch src/pptx_builder/__init__.py
+
+# Install dependencies (this layer will be cached)
+RUN pip install --no-cache-dir .[web]
+
+# Now copy actual source code
 COPY src/ src/
 
-# Install package with web extras (includes all dependencies)
-RUN pip install --no-cache-dir .[web]
+# Reinstall package (fast, dependencies already cached)
+RUN pip install --no-cache-dir --force-reinstall --no-deps .[web]
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
