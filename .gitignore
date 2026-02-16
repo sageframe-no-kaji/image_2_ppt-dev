@@ -52,6 +52,9 @@ htmlcov/
 # Environment
 .env
 
+# Private/internal documentation
+private/
+
 # Output files (examples)
 *.pptx
 temp_*
