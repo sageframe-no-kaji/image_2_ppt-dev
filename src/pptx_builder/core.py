@@ -22,12 +22,16 @@ Notes:
 """
 
 import sys
+import logging
 from pathlib import Path
 from typing import Tuple, List
 
 from pptx import Presentation
 from pptx.util import Inches, Emu
 from tqdm import tqdm
+
+# Set up module logger
+logger = logging.getLogger(__name__)
 
 # -----------------------------
 # Slide size presets (in inches)
@@ -265,6 +269,12 @@ def parse_cli_args():
     )
 
     parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose debug logging output.",
+    )
+
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Overwrite existing PPTX files without confirmation",
@@ -301,19 +311,19 @@ def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
     """Convert PDF pages to temporary PNG files."""
     import tempfile  # noqa: E402
 
-    print(f"[DEBUG make_ppt] Starting PDF conversion: {pdf_path}")
-    print(f"[DEBUG make_ppt] PDF exists: {pdf_path.exists()}")
-    print(
-        f"[DEBUG make_ppt] PDF size: {pdf_path.stat().st_size if pdf_path.exists() else 'N/A'}"
+    logger.debug(f"Starting PDF conversion: {pdf_path}")
+    logger.debug(f"PDF exists: {pdf_path.exists()}")
+    logger.debug(
+        f"PDF size: {pdf_path.stat().st_size if pdf_path.exists() else 'N/A'}"
     )
 
     temp_dir = Path(tempfile.mkdtemp(prefix="pptx_pdf_"))
-    print(f"[DEBUG make_ppt] Created temp dir: {temp_dir}")
+    logger.debug(f"Created temp dir: {temp_dir}")
 
     try:
-        print(f"[DEBUG make_ppt] Calling convert_from_path with dpi={dpi}")
+        logger.debug(f"Calling convert_from_path with dpi={dpi}")
         pages = convert_from_path(pdf_path.as_posix(), dpi=dpi)
-        print(f"[DEBUG make_ppt] Got {len(pages)} pages from PDF")
+        logger.debug(f"Got {len(pages)} pages from PDF")
         out_paths = []
 
         # Convert pages with progress bar
@@ -327,17 +337,17 @@ def convert_pdf_to_images(pdf_path: Path, dpi: int) -> List[Path]:
             out_path = temp_dir / f"page_{i:04d}.png"
             page.save(out_path, "PNG")
             out_paths.append(out_path)
-            print(f"[DEBUG make_ppt] Saved page {i} to {out_path}")
+            logger.debug(f"Saved page {i} to {out_path}")
 
-        print(f"[DEBUG make_ppt] Successfully converted {len(out_paths)} pages")
+        logger.debug(f"Successfully converted {len(out_paths)} pages")
         return out_paths
     except Exception as e:
         # Clean up temp directory on failure
         import shutil
         import traceback
 
-        print(f"[ERROR make_ppt] PDF conversion failed: {e}")
-        print(f"[ERROR make_ppt] Traceback:\n{traceback.format_exc()}")
+        logger.error(f"PDF conversion failed: {e}")
+        logger.debug(f"Traceback:\n{traceback.format_exc()}")
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
         raise RuntimeError(f"Failed to convert PDF: {e}")
@@ -422,6 +432,18 @@ def process_folder(folder: Path, recursive: bool, dpi: int, quiet: bool) -> None
 def main():
     """Entry point for make_ppt.py — supports CLI or interactive use."""
     args = parse_cli_args()
+
+    # Configure logging based on verbose flag
+    if args.verbose:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(levelname)s: %(message)s"
+        )
+    else:
+        logging.basicConfig(
+            level=logging.WARNING,
+            format="%(levelname)s: %(message)s"
+        )
 
     # Validate --output usage
     if args.output and args.input and len(args.input) > 1:

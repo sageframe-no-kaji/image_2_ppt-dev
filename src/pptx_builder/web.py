@@ -5,6 +5,7 @@ Simple interface for converting PDFs and images to PowerPoint
 """
 
 import gradio as gr
+import logging
 import tempfile
 import shutil
 import atexit
@@ -17,6 +18,10 @@ from .core import (
     convert_pdf_to_images,
     pdf_first_page_size_inches,
 )
+
+# Set up module logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # Slide size options for dropdown
 SLIDE_SIZE_OPTIONS = {
@@ -83,7 +88,7 @@ def process_files(
     if not files:
         return None
 
-    print(f"[DEBUG] Processing {len(files)} file(s)")
+    logger.debug(f"Processing {len(files)} file(s)")
 
     # Security: Limit number of files
     if len(files) > MAX_FILES:
@@ -91,7 +96,7 @@ def process_files(
 
     # Security: Check file sizes
     for file in files:
-        print(f"[DEBUG] Checking file: {file}")
+        logger.debug(f"Checking file: {file}")
         file_path = Path(file)
         if file_path.exists() and file_path.stat().st_size > MAX_FILE_SIZE:
             raise gr.Error(f"File too large: {file_path.name}. Maximum 50MB per file.")
@@ -99,7 +104,7 @@ def process_files(
     # Create temp directory for processing
     temp_dir = Path(tempfile.mkdtemp(prefix="pptx_builder_", dir="/tmp"))
     TEMP_DIRS.append(temp_dir)
-    print(f"[DEBUG] Created temp dir: {temp_dir}")
+    logger.debug(f"Created temp dir: {temp_dir}")
 
     try:
         # Get slide dimensions
@@ -108,39 +113,39 @@ def process_files(
         # Auto-detect aspect ratio for single PDF
         if len(files) == 1 and Path(files[0]).suffix.lower() == ".pdf":
             width_in, height_in = pdf_first_page_size_inches(Path(files[0]))
-            print(
-                f"[DEBUG] Auto-detected PDF aspect ratio: {width_in:.2f}x{height_in:.2f}"
+            logger.debug(
+                f"Auto-detected PDF aspect ratio: {width_in:.2f}x{height_in:.2f}"
             )
 
         mode = "fit" if fit_mode == "Fit whole image" else "fill"
-        print(f"[DEBUG] Slide size: {width_in}x{height_in}, mode: {mode}")
+        logger.debug(f"Slide size: {width_in}x{height_in}, mode: {mode}")
 
         image_files = []
 
         # Process each uploaded file
         for file in files:
             file_path = Path(file)
-            print(f"[DEBUG] Processing file: {file_path}")
+            logger.debug(f"Processing file: {file_path}")
 
             # Handle PDFs
             if file_path.suffix.lower() == ".pdf":
-                print("[DEBUG] Converting PDF at {} DPI".format(dpi))
+                logger.debug("Converting PDF at {} DPI".format(dpi))
                 # Convert PDF to images
                 pdf_images = convert_pdf_to_images(file_path, dpi=dpi)
-                print(f"[DEBUG] Got {len(pdf_images)} images from PDF")
+                logger.debug(f"Got {len(pdf_images)} images from PDF")
                 image_files.extend(pdf_images)
             else:
                 # Direct image files
-                print("[DEBUG] Adding image file directly")
+                logger.debug("Adding image file directly")
                 image_files.append(file_path)
 
         if not image_files:
-            print("[DEBUG] No image files to process")
+            logger.debug("No image files to process")
             return None
 
         # Sort images
         image_files.sort(key=lambda p: p.name.lower())
-        print(f"[DEBUG] Total images: {len(image_files)}")
+        logger.debug(f"Total images: {len(image_files)}")
 
         # Create output PPTX with appropriate name
         if output_name and output_name.strip():
@@ -157,7 +162,7 @@ def process_files(
             output_filename = "presentation.pptx"
 
         output_path = temp_dir / output_filename
-        print(f"[DEBUG] Building presentation: {output_path}")
+        logger.debug(f"Building presentation: {output_path}")
 
         build_presentation(
             images=image_files,
@@ -168,14 +173,14 @@ def process_files(
             show_progress=False,  # No terminal progress in web UI
         )
 
-        print("[DEBUG] Presentation created successfully")
+        logger.debug("Presentation created successfully")
         return str(output_path)
 
     except Exception as e:
         import traceback
 
-        print(f"[ERROR] Exception occurred: {e}")
-        print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+        logger.error(f"Exception occurred: {e}")
+        logger.debug(f"Traceback:\n{traceback.format_exc()}")
         raise gr.Error(f"Error: {str(e)}")
 
 
