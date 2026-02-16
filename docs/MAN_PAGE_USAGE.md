@@ -1,6 +1,6 @@
-# Man Page for make_ppt
+# Man Page for pptx-builder
 
-This directory contains the manual page for `make_ppt.py`.
+This directory contains the manual page for `pptx-builder`.
 
 ## Viewing the Man Page
 
@@ -8,31 +8,31 @@ This directory contains the manual page for `make_ppt.py`.
 
 ```bash
 # From the project root
-man docs/make_ppt.1
+man docs/pptx-builder.1
 ```
 
 ### Option 2: Convert to text
 
 ```bash
 # Generate plain text version
-man docs/make_ppt.1 | col -b > docs/make_ppt.txt
+man docs/pptx-builder.1 | col -b > docs/pptx-builder.txt
 
 # Or use groff directly
-groff -man -Tascii docs/make_ppt.1 | less
+groff -man -Tascii docs/pptx-builder.1 | less
 ```
 
 ### Option 3: Convert to PDF
 
 ```bash
 # Generate PDF version
-groff -man -Tps docs/make_ppt.1 | ps2pdf - docs/make_ppt.pdf
+groff -man -Tps docs/pptx-builder.1 | ps2pdf - docs/pptx-builder.pdf
 ```
 
 ### Option 4: Convert to HTML
 
 ```bash
 # Generate HTML version
-groff -man -Thtml docs/make_ppt.1 > docs/make_ppt.html
+groff -man -Thtml docs/pptx-builder.1 > docs/pptx-builder.html
 ```
 
 ## Installing System-Wide (Optional)
@@ -41,7 +41,7 @@ To install the man page system-wide (requires sudo):
 
 ```bash
 # Copy to system man pages directory
-sudo cp docs/make_ppt.1 /usr/local/share/man/man1/
+sudo cp docs/pptx-builder.1 /usr/local/share/man/man1/
 
 # Update man database
 sudo mandb  # Linux
@@ -49,12 +49,12 @@ sudo mandb  # Linux
 sudo /usr/libexec/makewhatis /usr/local/share/man  # macOS
 
 # Now you can use:
-man make_ppt
+man pptx-builder
 ```
 
 ## Man Page Format
 
-The file `make_ppt.1` is written in **troff/groff** format, which is the standard for Unix man pages. The `.1` extension indicates it's a "User Commands" manual (section 1).
+The file `pptx-builder.1` is written in **troff/groff** format, which is the standard for Unix man pages. The `.1` extension indicates it's a "User Commands" manual (section 1).
 
 ### Man Page Sections
 
@@ -87,7 +87,7 @@ See `man 7 groff_man` for full documentation.
 
 View the complete man page with all formatting:
 ```bash
-man docs/make_ppt.1
+man docs/pptx-builder.1
 ```
 
 Search within man page (once viewing):
