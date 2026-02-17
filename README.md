@@ -18,6 +18,24 @@ pptx-builder -i document.pdf
 
 ---
 
+## Live Demo
+
+A limited public demo is available:
+
+**https://pptx.sageframe.net**
+
+**Demo limits:**
+
+- Maximum file size: 20MB per file
+- Maximum files per upload: 15
+- Maximum PDF length: 100 pages
+- Maximum DPI: 300
+
+Files are processed in memory and automatically deleted.
+Nothing is stored or retained.
+
+---
+
 ## Why This Exists
 
 * **Privacy**: Process files locally without uploading to online converters.
